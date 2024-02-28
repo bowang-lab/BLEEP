@@ -1,7 +1,5 @@
 import os
-import numpy as np
 from tqdm import tqdm
-import scipy.io as sio
 
 import torch
 from torch import nn
@@ -13,8 +11,6 @@ from dataset import CLIPDataset
 from models import CLIPModel, CLIPModel_ViT, CLIPModel_ViT_L, CLIPModel_CLIP, CLIPModel_resnet101, CLIPModel_resnet152
 from utils import AvgMeter
 from torch.utils.data import DataLoader
-
-import scanpy as sc
 import argparse
 
 parser = argparse.ArgumentParser(description='DDP for CLIP')
@@ -36,18 +32,18 @@ parser.add_argument('--model', type=str, default='resnet50', help='')
 def build_loaders(args):
     # slice 3 randomly chosen to be test and will be left out during training
     print("Building loaders")
-    dataset = CLIPDataset(image_path = "image/GEX_C73_A1_Merged.tif",
-               spatial_pos_path = "data/tissue_pos_matrices/tissue_positions_list_1.csv",
-               reduced_mtx_path = "data/filtered_expression_matrices/1/harmony_matrix.npy",
-               barcode_path = "data/filtered_expression_matrices/1/barcodes.tsv")
-    dataset2 = CLIPDataset(image_path = "image/GEX_C73_B1_Merged.tif",
-                spatial_pos_path = "data/tissue_pos_matrices/tissue_positions_list_2.csv",
-                reduced_mtx_path = "data/filtered_expression_matrices/2/harmony_matrix.npy",
-                barcode_path = "data/filtered_expression_matrices/2/barcodes.tsv")
-    dataset4 = CLIPDataset(image_path = "image/GEX_C73_D1_Merged.tif",
-                spatial_pos_path = "data/tissue_pos_matrices/tissue_positions_list_4.csv",
-                reduced_mtx_path = "data/filtered_expression_matrices/4/harmony_matrix.npy",
-                barcode_path = "data/filtered_expression_matrices/4/barcodes.tsv")
+    dataset = CLIPDataset(image_path = "~/GSE240429_data/images/GEX_C73_A1_Merged.tif",
+               spatial_pos_path = "~/GSE240429_data/data/tissue_pos_matrices/tissue_positions_list_1.csv",
+               reduced_mtx_path = "~/GSE240429_data/data/filtered_expression_matrices/1/harmony_matrix.npy",
+               barcode_path = "~/GSE240429_data/data/filtered_expression_matrices/1/barcodes.tsv")
+    dataset2 = CLIPDataset(image_path = "~/GSE240429_data/images/GEX_C73_B1_Merged.tif",
+                spatial_pos_path = "~/GSE240429_data/data/tissue_pos_matrices/tissue_positions_list_2.csv",
+                reduced_mtx_path = "~/GSE240429_data/data/filtered_expression_matrices/2/harmony_matrix.npy",
+                barcode_path = "~/GSE240429_data/data/filtered_expression_matrices/2/barcodes.tsv")
+    dataset4 = CLIPDataset(image_path = "~/GSE240429_data/images/GEX_C73_D1_Merged.tif",
+                spatial_pos_path = "~/GSE240429_data/data/tissue_pos_matrices/tissue_positions_list_4.csv",
+                reduced_mtx_path = "~/GSE240429_data/data/filtered_expression_matrices/4/harmony_matrix.npy",
+                barcode_path = "~/GSE240429_data/data/filtered_expression_matrices/4/barcodes.tsv")
     
     dataset = torch.utils.data.ConcatDataset([dataset, dataset2, dataset4])
 
@@ -64,62 +60,6 @@ def build_loaders(args):
 
     print("Finished building loaders")
     return train_loader, test_loader
-
-if False:
-    #only need to run once to save hvg_matrix.npy
-    #filter expression matrices to only include HVGs shared across all datasets
-
-
-    def hvg_selection_and_pooling(exp_paths, n_top_genes = 1000):
-        #input n expression matrices paths, output n expression matrices with only the union of the HVGs
-
-        #read adata and find hvgs
-        hvg_bools = []
-        for d in exp_paths:
-            adata = sio.mmread(d)
-            adata = adata.toarray()
-            print(adata.shape)
-            adata = sc.AnnData(X=adata.T, dtype=adata.dtype)
-
-            # Preprocess the data
-            sc.pp.normalize_total(adata)
-            sc.pp.log1p(adata)
-            sc.pp.highly_variable_genes(adata, n_top_genes=n_top_genes)
-            
-            #save hvgs
-            hvg = adata.var['highly_variable']
-            
-            hvg_bools.append(hvg)
-        
-        #find union of hvgs
-        hvg_union = hvg_bools[0]
-        for i in range(1, len(hvg_bools)):
-            print(sum(hvg_union), sum(hvg_bools[i]))
-            hvg_union = hvg_union | hvg_bools[i]
-
-        print("Number of HVGs: ", hvg_union.sum())
-        
-        #filter expression matrices
-        filtered_exp_mtxs = []
-        for d in exp_paths:
-            adata = sio.mmread(d)
-            adata = adata.toarray()
-            adata = adata[hvg_union]
-            filtered_exp_mtxs.append(adata)
-
-        return filtered_exp_mtxs
-
-
-
-    exp_paths = ["data/filtered_expression_matrices/1/matrix.mtx",
-                "data/filtered_expression_matrices/2/matrix.mtx",
-                "data/filtered_expression_matrices/3/matrix.mtx",
-                "data/filtered_expression_matrices/4/matrix.mtx"]
-
-    filtered_mtx = hvg_selection_and_pooling(exp_paths)
-
-    for i in range(len(filtered_mtx)):
-        np.save("data/filtered_expression_matrices/" + str(i+1) +"/hvg_matrix.npy", filtered_mtx[i])
 
 def cleanup():
     dist.destroy_process_group()
