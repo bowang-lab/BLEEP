@@ -22,10 +22,3 @@ dataset.
 </div>
 
 
-@article{xie2024spatially,
-  title={Spatially Resolved Gene Expression Prediction from Histology Images via Bi-modal Contrastive Learning},
-  author={Xie, Ronald and Pang, Kuan and Chung, Sai and Perciani, Catia and MacParland, Sonya and Wang, Bo and Bader, Gary},
-  journal={Advances in Neural Information Processing Systems},
-  volume={36},
-  year={2024}
-}
