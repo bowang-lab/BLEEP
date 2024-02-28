@@ -4,9 +4,6 @@ Spatially Resolved Gene Expression Prediction from H&E Histology Images via Bi-m
 Manuscript: 
 https://proceedings.neurips.cc/paper_files/paper/2023/hash/df656d6ed77b565e8dcdfbf568aead0a-Abstract-Conference.html
 
-Presentation:
-https://neurips.cc/virtual/2023/poster/70961
-
 
 We present BLEEP (Bi-modaL Embedding for Expression Prediction), a bi-modal
 embedding framework capable of generating spatially resolved gene expression
