@@ -35,7 +35,7 @@ class CLIPModel(nn.Module):
         images_similarity = image_embeddings @ image_embeddings.T
         spots_similarity = spot_embeddings @ spot_embeddings.T
         targets = F.softmax(
-            (images_similarity + spots_similarity) / 2 * self.temperature, dim=-1
+            ((images_similarity + spots_similarity) / 2) / self.temperature, dim=-1
         )
         spots_loss = cross_entropy(logits, targets, reduction='none')
         images_loss = cross_entropy(logits.T, targets.T, reduction='none')
