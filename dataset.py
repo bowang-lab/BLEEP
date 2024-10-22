@@ -37,14 +37,24 @@ class CLIPDataset(torch.utils.data.Dataset):
 
     def transform(self, image):
         image = Image.fromarray(image)
-        # Random flipping and rotations
-        if random.random() > 0.5:
-            image = TF.hflip(image)
-        if random.random() > 0.5:
-            image = TF.vflip(image)
-        angle = random.choice([180, 90, 0, -90])
-        image = TF.rotate(image, angle)
-        return np.asarray(image)
+        
+        if self.is_train:    
+            # Random flipping and rotations
+            if random.random() > 0.5:
+                image = TF.hflip(image)
+            if random.random() > 0.5:
+                image = TF.vflip(image)
+            
+            angle = random.choice([180, 90, 0, -90])
+            image = TF.rotate(image, angle)
+            
+        # Convert to tensor
+        image = TF.to_tensor(image)
+        
+        # Normalize using ImageNet mean and std
+        image = TF.normalize(image, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        
+        return image
 
     def __getitem__(self, idx):
         item = {}
@@ -54,7 +64,7 @@ class CLIPDataset(torch.utils.data.Dataset):
         image = self.whole_image[(v1-112):(v1+112),(v2-112):(v2+112)]
         image = self.transform(image)
         
-        item['image'] = torch.tensor(image).permute(2, 0, 1).float() #color channel first, then XY
+        item['image'] = image.permute(2, 0, 1).float() #color channel first, then XY
         item['reduced_expression'] = torch.tensor(self.reduced_matrix[idx,:]).float()  #cell x features (3467)
         item['barcode'] = barcode
         item['spatial_coords'] = [v1,v2]
